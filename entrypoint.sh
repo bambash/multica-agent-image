@@ -2,9 +2,13 @@
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
-# MULTICA_TOKEN is injected from a K8s secret at runtime and is read
-# directly by the daemon — no config file needed.
+# Write multica auth config. The daemon's resolveAuth() always reads from
+# ~/.multica/config.json (default profile = empty string), NOT from env vars.
+# MULTICA_TOKEN is the K8s env var holding the PAT value.
 # ---------------------------------------------------------------------------
+mkdir -p "${HOME}/.multica"
+printf '{"token":"%s"}\n' "${MULTICA_TOKEN}" \
+  > "${HOME}/.multica/config.json"
 
 # ---------------------------------------------------------------------------
 # Use stable pod name as device name (MY_POD_NAME injected via downward API)

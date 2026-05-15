@@ -47,7 +47,16 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH=/root/.local/bin:${PATH}
 
 # ---------------------------------------------------------------------------
-# Layer 5 — Multica daemon CLI
+# Layer 5 — OpenBao CLI (bao) — Vault-compatible secrets manager
+# ---------------------------------------------------------------------------
+ARG BAO_VERSION=2.5.3
+RUN curl -fsSLO "https://github.com/openbao/openbao/releases/download/v${BAO_VERSION}/openbao_${BAO_VERSION}_linux_amd64.deb" \
+  && dpkg -i "openbao_${BAO_VERSION}_linux_amd64.deb" \
+  && rm "openbao_${BAO_VERSION}_linux_amd64.deb" \
+  && bao version
+
+# ---------------------------------------------------------------------------
+# Layer 6 — Multica daemon CLI
 # The installer tries /usr/local/bin first (writable as root), so the binary
 # lands at /usr/local/bin/multica.
 # ---------------------------------------------------------------------------
@@ -55,13 +64,13 @@ RUN curl -fsSL https://raw.githubusercontent.com/multica-ai/multica/main/scripts
   && multica --version
 
 # ---------------------------------------------------------------------------
-# Layer 6 — Claude Code (npm global install, lands in /usr/lib/node_modules
+# Layer 7 — Claude Code (npm global install, lands in /usr/lib/node_modules
 # with a symlink at /usr/bin/claude or /usr/local/bin/claude)
 # ---------------------------------------------------------------------------
 RUN npm install -g @anthropic-ai/claude-code
 
 # ---------------------------------------------------------------------------
-# Layer 7 — Non-root user (UID 1001)
+# Layer 8 — Non-root user (UID 1001)
 # All tools installed globally above remain accessible on system PATH.
 # ---------------------------------------------------------------------------
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh

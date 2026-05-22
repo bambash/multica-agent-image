@@ -69,7 +69,22 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
   && gh --version
 
 # ---------------------------------------------------------------------------
-# Layer 7 — Multica daemon CLI
+# Layer 7 — kubectl
+# ---------------------------------------------------------------------------
+RUN KUBECTL_VERSION="$(curl -fsSL https://dl.k8s.io/release/stable.txt)" \
+  && curl -fsSLO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" \
+  && install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl \
+  && rm kubectl \
+  && kubectl version --client
+
+# ---------------------------------------------------------------------------
+# Layer 8 — helm
+# ---------------------------------------------------------------------------
+RUN curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash \
+  && helm version
+
+# ---------------------------------------------------------------------------
+# Layer 9 — Multica daemon CLI
 # The installer tries /usr/local/bin first (writable as root), so the binary
 # lands at /usr/local/bin/multica.
 # ---------------------------------------------------------------------------
@@ -77,13 +92,13 @@ RUN curl -fsSL https://raw.githubusercontent.com/multica-ai/multica/main/scripts
   && multica --version
 
 # ---------------------------------------------------------------------------
-# Layer 8 — Claude Code (npm global install, lands in /usr/lib/node_modules
+# Layer 10 — Claude Code (npm global install, lands in /usr/lib/node_modules
 # with a symlink at /usr/bin/claude or /usr/local/bin/claude)
 # ---------------------------------------------------------------------------
 RUN npm install -g @anthropic-ai/claude-code
 
 # ---------------------------------------------------------------------------
-# Layer 9 — Non-root user (UID 1001)
+# Layer 11 — Non-root user (UID 1001)
 # All tools installed globally above remain accessible on system PATH.
 # ---------------------------------------------------------------------------
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh

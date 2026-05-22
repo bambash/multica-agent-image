@@ -71,16 +71,25 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
 # ---------------------------------------------------------------------------
 # Layer 7 — kubectl
 # ---------------------------------------------------------------------------
-RUN KUBECTL_VERSION="$(curl -fsSL https://dl.k8s.io/release/stable.txt)" \
+ARG KUBECTL_VERSION=
+RUN KUBECTL_VERSION="${KUBECTL_VERSION:-$(curl -fsSL https://dl.k8s.io/release/stable.txt)}" \
   && curl -fsSLO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" \
+  && curl -fsSLO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl.sha256" \
+  && echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check \
   && install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl \
-  && rm kubectl \
+  && rm kubectl kubectl.sha256 \
   && kubectl version --client
 
 # ---------------------------------------------------------------------------
 # Layer 8 — helm
 # ---------------------------------------------------------------------------
-RUN curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash \
+ARG HELM_VERSION=3.17.3
+RUN curl -fsSLO "https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz" \
+  && curl -fsSLO "https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz.sha256sum" \
+  && sha256sum --check "helm-v${HELM_VERSION}-linux-amd64.tar.gz.sha256sum" \
+  && tar -xzf "helm-v${HELM_VERSION}-linux-amd64.tar.gz" linux-amd64/helm \
+  && install -o root -g root -m 0755 linux-amd64/helm /usr/local/bin/helm \
+  && rm -rf "helm-v${HELM_VERSION}-linux-amd64.tar.gz" "helm-v${HELM_VERSION}-linux-amd64.tar.gz.sha256sum" linux-amd64 \
   && helm version
 
 # ---------------------------------------------------------------------------
